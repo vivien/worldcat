@@ -1,7 +1,23 @@
+# Simple WorldCat Search Ruby API
+# http://oclc.org/developer/services/WCAPI
+#
+# Author:: Vivien Didelot 'v0n' <vivien.didelot@gmail.com>
+
 require 'rubygems'
 require 'open-uri'
 require 'simple-rss'
 require 'marc'
+
+# The WorldCat class methods use WorldCat webservices.
+# Options are given as a hash, and keys may be String or Symbol with:
+# * the same name than GET parameters,
+# * Ruby naming convention (i.e. underscore),
+# * or an alias if available.
+#
+# Note: aliases have priority.
+#
+# For a complete list of parameters, see documentation here:
+# http://oclc.org/developer/documentation/worldcat-search-api/parameters
 
 class WorldCat
   class WorldCatError < StandardError; end
@@ -14,33 +30,63 @@ class WorldCat
     @raw = nil
   end
 
+  # OpenSearch method.
+  #
+  # Aliases:
+  # * :query is an alias for :q
+  # * :max is an alias for :count
+  # * :citation_format is an alias for :cformat
   def open_search(options)
     #TODO add other feed_tags
 
-    # Rename :query key to :q if it exists.
-    options[:q] = options.delete(:query) if options.has_key? :query
+    # Check aliases
+    options.keys.each do |k|
+      case k.to_s
+      when "query" then options[:q] = options.delete(k)
+      when "max" then options[:count] = options.delete(k)
+      when "citation_format" then options[:cformat] = options.delete(k)
+      end
+    end
 
     do_request("search/opensearch", options)
-
-    return SimpleRSS.parse @raw
+    SimpleRSS.parse @raw
   end
 
-  def sru_search(options, format = "marcxml")
-    raise NotImplementedError
+  # SRU Search method.
+  #
+  # Aliases:
+  # * :q is an alias for :query
+  # * :format is an alias for :record_schema
+  # and its value can match "marc" or "dublin", or can be the exact value. e.g.
+  #   :format => :marcxml
+  # * :citation_format is an alias for :cformat
+  # * :start is an alias for :start_record
+  # * :count and :max are aliases for :maximum_records
+  def sru_search(options)
+    #TODO add other control_tags?
 
-    # Rename :query key to :q if it exists.
-    options[:q] = options.delete(:query) if options.has_key? :query
-    options[:format] = format unless options.has_key? :format
-
-    case options[:format]
-    when "marcxml"
-      raise(NotImplementedError, "RSS format not available yet")
-    when "dublin"
-      raise(NotImplementedError, "Atom format not available yet")
-    else raise(ArgumentError, "format #{format} invalid")
+    # Check aliases
+    options.keys.each do |k|
+      case k.to_s
+      when "q" then options[:query] = options.delete(k)
+      #TODO aliases for keywords, title, author, subject
+      when /(count|max)/ then options[:maximum_records] = options.delete(k)
+      when "citation_format" then options[:cformat] = options.delete(k)
+      #TODO alias for frbrGrouping => true|false
+      when "format"
+        format = options.delete(k).to_s
+        options[:record_schema] = case format
+                                  when /marc/ then "info:srw/schema/1/marcxml"
+                                  when /dublin/ then "info:srw/schema/1/dc"
+                                  else format
+                                  end
+      end
     end
 
     do_request("search/sru", options)
+    #TODO specific constructor for Dublin Core?
+    MARC::Reader.new(StringIO.new @raw)
+    #TODO check for diagnostic
   end
 
   private
