@@ -51,6 +51,7 @@ class WorldCatTest < Test::Unit::TestCase
       @client.sru_search :query => "Civil War"
     end
 
+    # MARC XML
     reader = @client.sru_search :query => '"Civil War"', :format => :marcxml
     assert_kind_of MARC::XMLReader, reader
 
@@ -62,6 +63,20 @@ class WorldCatTest < Test::Unit::TestCase
     assert_equal 10, records.size
     assert_equal "Americans", records.first["650"]["a"]
     assert_equal "DLC.", records.first["710"]["5"]
-    assert_equal "Civil War /written by John Stanchak.", records[5]["245"].value
+    assert_equal "The Civil War", records[8]["245"]["a"]
+
+    # With SRU CQL search
+    cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
+    reader = @client.sru_search :q => cql
+    assert_kind_of MARC::XMLReader, reader
+
+    records = Array.new
+    reader.each do |record|
+      assert_kind_of MARC::Record, record
+      records.push record
+    end
+    assert_equal 10, records.size
+    assert_equal "Antietam, Battle of, Md., 1862.", records.first["650"]["a"]
+    # Dublin Core
   end
 end

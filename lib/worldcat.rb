@@ -20,16 +20,24 @@ require 'rexml/document'
 # For a complete list of parameters, see documentation here:
 # http://oclc.org/developer/documentation/worldcat-search-api/parameters
 
+# The WorldCat class, used to interact with the WorldCat search webservices.
 class WorldCat
+
+  # A specific WorldCat error class.
   class WorldCatError < StandardError
-    def initialize(details)
+    def initialize(details = nil)
       @details = details
     end
   end
 
+  # The WorldCat webservices API key.
   attr_writer :api_key
+
+  # The raw response from WorldCat.
   attr_reader :raw
 
+  # The constructor.
+  # The API key can be given here or later.
   def initialize(api_key = nil)
     @api_key = api_key
     @raw = nil
@@ -41,6 +49,9 @@ class WorldCat
   # * :query is an alias for :q
   # * :max is an alias for :count
   # * :citation_format is an alias for :cformat
+  #
+  # This method returns a SimpleRSS object. You can see the usage on:
+  # http://simple-rss.rubyforge.org/
   def open_search(options)
     #TODO add other feed_tags
 
@@ -53,8 +64,9 @@ class WorldCat
       end
     end
 
-    do_request("search/opensearch", options)
+    fetch("search/opensearch", options)
     SimpleRSS.parse @raw
+    #TODO rescue SimpleRSS Error? (i.e. response too small)
   end
 
   # SRU Search method.
@@ -67,6 +79,9 @@ class WorldCat
   # * :citation_format is an alias for :cformat
   # * :start is an alias for :start_record
   # * :count and :max are aliases for :maximum_records
+  #
+  # This method returns a MARC::XMLReader object. You can see the usage on:
+  # http://marc.rubyforge.org/
   def sru_search(options)
     #TODO add other control_tags?
 
@@ -75,6 +90,8 @@ class WorldCat
       case k.to_s
       when "q" then options[:query] = options.delete(k)
         #TODO aliases for keywords, title, author, subject to simplify the query
+        # => not sure: how to write operator?
+        #TODO parse the query with cql-ruby
       when /(count|max)/ then options[:maximum_records] = options.delete(k)
       when "citation_format" then options[:cformat] = options.delete(k)
         #TODO alias for frbrGrouping => true|false
@@ -88,15 +105,16 @@ class WorldCat
       end
     end
 
-    do_request("search/sru", options, true)
-
+    fetch("search/sru", options, true)
     #TODO specific constructor for Dublin Core?
     MARC::XMLReader.new(StringIO.new @raw)
   end
 
   private
 
-  def do_request(url_comp, options, diagnostic = false)
+  # Method to fetch the raw response from WorldCat webservices.
+  # With diagnostic set to true, it will check for error from WorldCat.
+  def fetch(url_comp, options, diagnostic = false)
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
 
@@ -108,7 +126,10 @@ class WorldCat
         @raw = raw.read
       end
     rescue OpenURI::HTTPError => e
-      raise WorldCatError, e.message
+      if e.message =~ /status=UNAUTHENTICATED/
+        raise WorldCatError.new(e.message), "Authentication failure"
+      else raise e
+      end
     end
 
     # Check for diagnostics
@@ -124,10 +145,14 @@ class WorldCat
     end
   end
 
+  # Helper function to camelize a string or symbol
+  # to match WorldCat services parameters.
   def camelize(key)
     key.to_s.gsub(/_(\w)/) { |m| m.sub('_', '').capitalize }
   end
 
+  # Helper function to parse a array, number or string
+  # to match WorldCat services parameters.
   def parse_value(value)
     value.is_a?(Array) ? value.join(',') : value.to_s
   end
