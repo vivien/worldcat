@@ -1,0 +1,62 @@
+= WorldCat Search API
+
+A WorldCat API for Ruby to interact with WorldCat search webservices.
+http://www.worldcat.org/
+
+== Usage
+
+  require 'worldcat'
+  
+  client = WorldCat.new '[api_key]'
+  
+  # Get Atom or RSS response from an OpenSearch
+  atom = client.open_search :query => "Civil War"
+  puts atom.feed.title
+  puts atom.entries.first.author
+
+  # Get MARC XML or Dublin Core from a SRU CQL query
+    cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
+  reader = client.sru_search :query => cql, :format => :marcxml
+  for record in reader
+    # print out field 245 subfield a
+    puts record['245']['a']
+  end
+
+For more information, please have a look at the documentation or the test cases.
+
+== Installation
+
+  gem install worldcat
+
+Available soon.
+
+== Why?
+
+The 'wcapi' gem does not satisfy several points, so another version is justified for many reasons:
+
+* It is better to use a RSS Ruby implementation, actually SimpleRSS, to get Atom or RSS response.
+* It is better to use the MARC Ruby implementation to get MARC XML or Dublin Core response from a SRU CQL search or other search.
+* Unit testing is great.
+
+== What this API can do
+
+* Send searches in OpenSearch or SRU CQL syntax.
+* Receive OpenSearch responses in RSS or Atom format (both are a SimpleRSS object).
+* Receive SRU responses in MARC XML or Dublin Core.
+
+== To do
+
+* Verify the usage of Dublin Core format.
+* Receive MARC XML content for a single OCLC record.
+* Receive geographically-sorted library holdings information (each including the institution's name, location and a catalog link) within requests for single records.
+* Receive records in standard bibliographic citation formats (APA, Chicago, Harvard, MLA, and Turabian).
+
+== Contribution
+
+Feel free to fork and send me a pull request for changes, fixes or suggestions.
+
+== See
+
+* {WorldCat webservices}[http://www.worldcat.org/affiliate/tools?atype=wcapi]
+* {Ruby MARC documentation}[http://marc.rubyforge.org/]
+* {Ruby Simple RSS documentation}[http://simple-rss.rubyforge.org/]
