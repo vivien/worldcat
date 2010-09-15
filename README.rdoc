@@ -1,26 +1,37 @@
 = WorldCat Search API
 
 A WorldCat API for Ruby to interact with WorldCat search webservices.
-http://www.worldcat.org/
+http://www.worldcat.org
 
 == Usage
 
   require 'worldcat'
   
   client = WorldCat.new '[api_key]'
-  
-  # Get Atom or RSS response from an OpenSearch
+
+Get Atom or RSS response from an OpenSearch
+
   atom = client.open_search :query => "Civil War"
   puts atom.feed.title
   puts atom.entries.first.author
 
-  # Get MARC XML or Dublin Core from a SRU CQL query
-    cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
-  reader = client.sru_search :query => cql, :format => :marcxml
+Get MARC XML or Dublin Core from a SRU CQL query
+
+  cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
+
+  reader = client.sru_search :query => cql, :format => "marcxml"
   for record in reader
     # print out field 245 subfield a
     puts record['245']['a']
   end
+
+If you'd like to use another implementation, the raw response is available:
+
+  client.raw
+
+A faster way?
+
+  rss = WorldCat.new.open_search :q => "Globalization", :format => "rss", :wskey => '[api_key]'
 
 For more information, please have a look at the documentation or the test cases.
 
