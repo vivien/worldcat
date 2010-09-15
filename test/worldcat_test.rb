@@ -63,8 +63,7 @@ class WorldCatTest < Test::Unit::TestCase
       records.push record
     end
     assert_equal 10, records.size
-    assert_equal "DLC.", records.first["710"]["5"]
-    assert_equal "The Civil War", records[8]["245"]["a"]
+    assert_equal "Touched with fire :", records[8]["245"]["a"]
 
     cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
     reader = @client.sru_search :q => cql
