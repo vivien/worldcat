@@ -7,6 +7,7 @@ require 'rubygems'
 require 'open-uri'
 require 'simple-rss'
 require 'marc'
+require 'rexml/document'
 
 # The WorldCat class methods use WorldCat webservices.
 # Options are given as a hash, and keys may be String or Symbol with:
@@ -20,7 +21,11 @@ require 'marc'
 # http://oclc.org/developer/documentation/worldcat-search-api/parameters
 
 class WorldCat
-  class WorldCatError < StandardError; end
+  class WorldCatError < StandardError
+    def initialize(details)
+      @details = details
+    end
+  end
 
   attr_writer :api_key
   attr_reader :raw
@@ -69,10 +74,10 @@ class WorldCat
     options.keys.each do |k|
       case k.to_s
       when "q" then options[:query] = options.delete(k)
-      #TODO aliases for keywords, title, author, subject
+        #TODO aliases for keywords, title, author, subject to simplify the query
       when /(count|max)/ then options[:maximum_records] = options.delete(k)
       when "citation_format" then options[:cformat] = options.delete(k)
-      #TODO alias for frbrGrouping => true|false
+        #TODO alias for frbrGrouping => true|false
       when "format"
         format = options.delete(k).to_s
         options[:record_schema] = case format
@@ -83,15 +88,15 @@ class WorldCat
       end
     end
 
-    do_request("search/sru", options)
+    do_request("search/sru", options, true)
+
     #TODO specific constructor for Dublin Core?
-    MARC::Reader.new(StringIO.new @raw)
-    #TODO check for diagnostic
+    MARC::XMLReader.new(StringIO.new @raw)
   end
 
   private
 
-  def do_request(url_comp, options)
+  def do_request(url_comp, options, diagnostic = false)
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
 
@@ -104,6 +109,18 @@ class WorldCat
       end
     rescue OpenURI::HTTPError => e
       raise WorldCatError, e.message
+    end
+
+    # Check for diagnostics
+    if diagnostic
+      xml = REXML::Document.new @raw
+      unless xml.root.elements['diagnostics'].nil?
+        d = xml.root.elements['diagnostics'].elements.first
+        details = d.elements["details"].text
+        message = d.elements["message"].text
+
+        raise WorldCatError.new(details), message
+      end
     end
   end
 

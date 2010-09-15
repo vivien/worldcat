@@ -47,6 +47,21 @@ class WorldCatTest < Test::Unit::TestCase
   end
 
   def test_sru_search
-    #marc = @client.sru_search :q => ""
+    assert_raise WorldCat::WorldCatError do
+      @client.sru_search :query => "Civil War"
+    end
+
+    reader = @client.sru_search :query => '"Civil War"', :format => :marcxml
+    assert_kind_of MARC::XMLReader, reader
+
+    records = Array.new
+    reader.each do |record|
+      assert_kind_of MARC::Record, record
+      records.push record
+    end
+    assert_equal 10, records.size
+    assert_equal "Americans", records.first["650"]["a"]
+    assert_equal "DLC.", records.first["710"]["5"]
+    assert_equal "Civil War /written by John Stanchak.", records[5]["245"].value
   end
 end
