@@ -47,12 +47,14 @@ class WorldCatTest < Test::Unit::TestCase
   end
 
   def test_sru_search
-    assert_raise WorldCat::WorldCatError do
+    assert_raise CqlRuby::CqlException do
       @client.sru_search :query => "Civil War"
     end
 
     # MARC XML
-    reader = @client.sru_search :query => '"Civil War"', :format => :marcxml
+    reader = @client.sru_search :query => '"Civil War"',
+      :sort_keys => ['Date','' ,0],
+      :format => :marcxml
     assert_kind_of MARC::XMLReader, reader
 
     records = Array.new
@@ -61,11 +63,9 @@ class WorldCatTest < Test::Unit::TestCase
       records.push record
     end
     assert_equal 10, records.size
-    assert_equal "Americans", records.first["650"]["a"]
     assert_equal "DLC.", records.first["710"]["5"]
     assert_equal "The Civil War", records[8]["245"]["a"]
 
-    # With SRU CQL search
     cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
     reader = @client.sru_search :q => cql
     assert_kind_of MARC::XMLReader, reader
@@ -77,6 +77,8 @@ class WorldCatTest < Test::Unit::TestCase
     end
     assert_equal 10, records.size
     assert_equal "Antietam, Battle of, Md., 1862.", records.first["650"]["a"]
+
     # Dublin Core
+    #TODO
   end
 end

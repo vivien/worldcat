@@ -8,6 +8,7 @@ require 'open-uri'
 require 'simple-rss'
 require 'marc'
 require 'rexml/document'
+require 'cql_ruby'
 
 # The WorldCat class methods use WorldCat webservices.
 # Options are given as a hash, and keys may be String or Symbol with:
@@ -91,7 +92,6 @@ class WorldCat
       when "q" then options[:query] = options.delete(k)
         #TODO aliases for keywords, title, author, subject to simplify the query
         # => not sure: how to write operator?
-        #TODO parse the query with cql-ruby
       when /(count|max)/ then options[:maximum_records] = options.delete(k)
       when "citation_format" then options[:cformat] = options.delete(k)
         #TODO alias for frbrGrouping => true|false
@@ -104,6 +104,9 @@ class WorldCat
                                   end
       end
     end
+
+    # Parse the CQL query. Raises a CqlException if it is not valid.
+    options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
 
     fetch("search/sru", options, true)
     #TODO specific constructor for Dublin Core?
