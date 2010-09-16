@@ -57,7 +57,7 @@ The 'wcapi' gem does not satisfy several points, so another version is justified
 
 == To do
 
-* Verify the usage of Dublin Core format.
+* Use the SRU gem for sru_search method
 * Receive MARC XML content for a single OCLC record.
 * Receive geographically-sorted library holdings information (each including the institution's name, location and a catalog link) within requests for single records.
 * Receive records in standard bibliographic citation formats (APA, Chicago, Harvard, MLA, and Turabian).
