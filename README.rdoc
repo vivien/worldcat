@@ -19,8 +19,8 @@ Get MARC XML or Dublin Core from a SRU CQL query
 
   cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
 
-  reader = client.sru_search :query => cql, :format => "marcxml"
-  for record in reader
+  records = client.sru_search :query => cql, :format => "marcxml"
+  for record in records
     # print out field 245 subfield a
     puts record['245']['a']
   end
