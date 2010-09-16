@@ -3,12 +3,13 @@
 #
 # Author:: Vivien Didelot 'v0n' <vivien.didelot@gmail.com>
 
-require 'rubygems'
-require 'open-uri'
-require 'simple-rss'
-require 'marc'
-require 'rexml/document'
-require 'cql_ruby'
+require 'rubygems'       # needed by simple-rss
+require 'open-uri'       # used to fetch responses
+require 'simple-rss'     # used for Atom and RSS format
+require 'marc'           # used for MARC records
+require 'rexml/document' # used for many XML purposes
+require 'cql_ruby'       # used to parse SRU CQL query
+require 'json'           # used for JSON format
 
 # The WorldCat class methods use WorldCat webservices.
 # Options are given as a hash, and keys may be String or Symbol with:
@@ -66,13 +67,14 @@ class WorldCat
     end
 
     fetch("search/opensearch", options)
+    #TODO diagnostic
     SimpleRSS.parse @raw
     #TODO rescue SimpleRSS Error? (i.e. response too small)
   end
 
-  # SRU Search method.
+  # SRU search method.
   #
-  # Aliases:
+  # aliases:
   # * :q is an alias for :query
   # * :format is an alias for :record_schema
   # and its value can match "marc" or "dublin", or can be the exact value. e.g.
@@ -81,8 +83,11 @@ class WorldCat
   # * :start is an alias for :start_record
   # * :count and :max are aliases for :maximum_records
   #
-  # This method returns a MARC::XMLReader object. You can see the usage on:
-  # http://marc.rubyforge.org/
+  # The CQL query will be parsed and can raise an exception if it is not valid.
+  #
+  # this method returns an array of MARC::Record objects for marc format
+  # (you can see the usage on http://marc.rubyforge.org),
+  # or a REXML::Document for Dublin Core format.
   def sru_search(options)
     #TODO add other control_tags?
 
@@ -91,18 +96,19 @@ class WorldCat
       case k.to_s
       when "q" then options[:query] = options.delete(k)
       when /(count|max)/ then options[:maximum_records] = options.delete(k)
+      when "start" then options[:start_record] = options.delete(k)
       when "citation_format" then options[:cformat] = options.delete(k)
       when "format"
         format = options.delete(k).to_s
         format = "info:srw/schema/1/marcxml" if format =~ /marc/
-        format = "info:srw/schema/1/dc" if format =~ /dublin/
-        options[:record_schema] = format
+          format = "info:srw/schema/1/dc" if format =~ /dublin/
+          options[:record_schema] = format
       end
     end
 
     # Parse the CQL query. Raises a CqlException if it is not valid.
     options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
-
+    #TODO accept only symbol keys
     fetch("search/sru", options, true)
 
     format = options[:record_schema]
@@ -111,6 +117,60 @@ class WorldCat
     else
       REXML::Document.new @raw
     end
+  end
+
+  # Library locations method.
+  #
+  # aliases:
+  # * :start is an alias for :start_library
+  # * :count and :max are aliases for :maximum_libraries
+  # * :latitude is an alias for :lat
+  # * :longitude is an alias for :lon
+  # * libtype can be given as text value as well. e.g.:
+  #   :libtype => :academic
+  # * record identifier should be given as type => id. e.g.:
+  #   :isbn => "014330223X"
+  #
+  # this method returns a REXML::Document for XML format,
+  # or a Hash for JSON format.
+  def library_locations(options)
+    url_comp = "content/libraries/"
+
+    # Check aliases
+    options.keys.each do |k|
+      case k.to_s
+      when /(count|max)/ then options[:maximum_libraries] = options.delete(k)
+      when "start" then options[:start_library] = options.delete(k)
+      when "latitude" then options[:lat] = options.delete(k)
+      when "longitude" then options[:lon] = options.delete(k)
+      when "format" then options.delete(k) if options[k].to_s == "xml"
+      when "libtype"
+        libtype = options[k].to_s
+        options[k] = 1 if libtype =~ "academic"
+        options[k] = 2 if libtype =~ "public"
+        options[k] = 3 if libtype =~ "government"
+        options[k] = 4 if libtype =~ "other"
+      when "oclc" then url_comp << options[k].to_s
+      when "isbn" then url_comp << "isbn/" << options[k].to_s
+      when "issn" then url_comp << "issn/" << options[k].to_s
+      when "sn" then url_comp << "sn/" << options[k].to_s
+      end
+    end
+
+    if options.has_key? :format
+      fetch(url_comp, options, false)
+      response = JSON.parse(@raw)
+      if response.has_key? "diagnostic"
+        details = response["diagnostic"].first["details"]
+        message = response["diagnostic"].first["message"]
+        raise WorldCatError.new(details), message
+      end
+    else
+      fetch(url_comp, options, true)
+      response = REXML::Document.new(@raw)
+    end
+
+    response
   end
 
   private
@@ -149,8 +209,10 @@ class WorldCat
     # Check for diagnostics
     if diagnostic
       xml = REXML::Document.new @raw
-      unless xml.root.elements['diagnostics'].nil?
-        d = xml.root.elements['diagnostics'].elements.first
+      d = xml.elements['diagnostics']
+      d = xml.root.elements['diagnostics'] if d.nil?
+      unless d.nil?
+        d = d.elements.first
         details = d.elements["details"].text
         message = d.elements["message"].text
 

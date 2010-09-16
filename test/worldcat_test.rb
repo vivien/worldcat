@@ -71,4 +71,22 @@ class WorldCatTest < Test::Unit::TestCase
     dublin = @client.sru_search :q => cql, :format => "dublincore"
     assert_kind_of REXML::Document, dublin
   end
+
+  def test_library_locations
+    assert_raise WorldCat::WorldCatError do
+      @client.library_locations :location => "XXXX", :format => "xml"
+    end
+
+    assert_raise WorldCat::WorldCatError do
+      @client.library_locations :location => "XXXX", :format => "json"
+    end
+
+    xml = @client.library_locations :isbn => "014330223X", :location => 2220
+    assert_kind_of REXML::Document, xml
+    #TODO add verification
+
+    json = @client.library_locations :isbn => "014330223X", :location => 2220, :format => "json"
+    assert_kind_of Hash, json
+    #TODO add verification
+  end
 end
