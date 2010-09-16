@@ -110,10 +110,21 @@ class WorldCat
 
     fetch("search/sru", options, true)
     #TODO specific constructor for Dublin Core?
-    MARC::XMLReader.new(StringIO.new @raw)
+    marc_to_array
   end
 
   private
+
+  # Helper method to convert a MARC::XMLReader in an array of records.
+  # That's easier to use and better because of the bug
+  # that makes the REXML reader empty after the first #each call.
+  def marc_to_array
+    reader = MARC::XMLReader.new(StringIO.new @raw)
+    records = Array.new
+    reader.each { |record| records << record }
+
+    records
+  end
 
   # Method to fetch the raw response from WorldCat webservices.
   # With diagnostic set to true, it will check for error from WorldCat.

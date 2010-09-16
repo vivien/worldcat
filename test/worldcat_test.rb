@@ -52,28 +52,18 @@ class WorldCatTest < Test::Unit::TestCase
     end
 
     # MARC XML
-    reader = @client.sru_search :query => '"Civil War"',
+    records = @client.sru_search :query => '"Civil War"',
       :sort_keys => ['Date','' ,0],
       :format => :marcxml
-    assert_kind_of MARC::XMLReader, reader
-
-    records = Array.new
-    reader.each do |record|
-      assert_kind_of MARC::Record, record
-      records.push record
-    end
+    assert_kind_of Array, records
+    records.each { |r| assert_kind_of MARC::Record, r }
     assert_equal 10, records.size
     assert_equal "Touched with fire :", records[8]["245"]["a"]
 
     cql = 'srw.kw="civil war" and (srw.su="antietam" or srw.su="sharpsburg")'
-    reader = @client.sru_search :q => cql
-    assert_kind_of MARC::XMLReader, reader
-
-    records = Array.new
-    reader.each do |record|
-      assert_kind_of MARC::Record, record
-      records.push record
-    end
+    records = @client.sru_search :q => cql
+    assert_kind_of Array, records
+    records.each { |r| assert_kind_of MARC::Record, r }
     assert_equal 10, records.size
     assert_equal "Antietam, Battle of, Md., 1862.", records.first["650"]["a"]
 
