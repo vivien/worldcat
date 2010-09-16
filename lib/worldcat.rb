@@ -12,10 +12,10 @@ require 'cql_ruby'       # used to parse SRU CQL query
 require 'json'           # used for JSON format
 
 # The WorldCat class methods use WorldCat webservices.
-# Options are given as a hash, and keys may be String or Symbol with:
+# Options are given as a hash and Symbol keys may be:
 # * the same name than GET parameters,
 # * Ruby naming convention (i.e. underscore),
-# * or an alias if available.
+# * or aliases if available.
 #
 # Note: aliases have priority.
 #
@@ -59,10 +59,10 @@ class WorldCat
 
     # Check aliases
     options.keys.each do |k|
-      case k.to_s
-      when "query" then options[:q] = options.delete(k)
-      when "max" then options[:count] = options.delete(k)
-      when "citation_format" then options[:cformat] = options.delete(k)
+      case k
+      when :query then options[:q] = options.delete(k)
+      when :max then options[:count] = options.delete(k)
+      when :citation_format then options[:cformat] = options.delete(k)
       end
     end
 
@@ -93,22 +93,21 @@ class WorldCat
 
     # Check aliases
     options.keys.each do |k|
-      case k.to_s
-      when "q" then options[:query] = options.delete(k)
-      when /(count|max)/ then options[:maximum_records] = options.delete(k)
-      when "start" then options[:start_record] = options.delete(k)
-      when "citation_format" then options[:cformat] = options.delete(k)
-      when "format"
+      case k
+      when :q then options[:query] = options.delete(k)
+      when :count, :max then options[:maximum_records] = options.delete(k)
+      when :start then options[:start_record] = options.delete(k)
+      when :citation_format then options[:cformat] = options.delete(k)
+      when :format
         format = options.delete(k).to_s
         format = "info:srw/schema/1/marcxml" if format =~ /marc/
-          format = "info:srw/schema/1/dc" if format =~ /dublin/
-          options[:record_schema] = format
+        format = "info:srw/schema/1/dc" if format =~ /dublin/
+        options[:record_schema] = format
       end
     end
 
     # Parse the CQL query. Raises a CqlException if it is not valid.
     options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
-    #TODO accept only symbol keys
     fetch("search/sru", options, true)
 
     format = options[:record_schema]
@@ -138,22 +137,22 @@ class WorldCat
 
     # Check aliases
     options.keys.each do |k|
-      case k.to_s
-      when /(count|max)/ then options[:maximum_libraries] = options.delete(k)
-      when "start" then options[:start_library] = options.delete(k)
-      when "latitude" then options[:lat] = options.delete(k)
-      when "longitude" then options[:lon] = options.delete(k)
-      when "format" then options.delete(k) if options[k].to_s == "xml"
-      when "libtype"
+      case k
+      when :count, :max then options[:maximum_libraries] = options.delete(k)
+      when :start then options[:start_library] = options.delete(k)
+      when :latitude then options[:lat] = options.delete(k)
+      when :longitude then options[:lon] = options.delete(k)
+      when :format then options.delete(k) if options[k].to_s == "xml"
+      when :libtype
         libtype = options[k].to_s
         options[k] = 1 if libtype =~ "academic"
         options[k] = 2 if libtype =~ "public"
         options[k] = 3 if libtype =~ "government"
         options[k] = 4 if libtype =~ "other"
-      when "oclc" then url_comp << options[k].to_s
-      when "isbn" then url_comp << "isbn/" << options[k].to_s
-      when "issn" then url_comp << "issn/" << options[k].to_s
-      when "sn" then url_comp << "sn/" << options[k].to_s
+      when :oclc then url_comp << options[k].to_s
+      when :isbn then url_comp << "isbn/" << options[k].to_s
+      when :issn then url_comp << "issn/" << options[k].to_s
+      when :sn then url_comp << "sn/" << options[k].to_s
       end
     end
 
