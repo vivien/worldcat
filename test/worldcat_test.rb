@@ -89,4 +89,14 @@ class WorldCatTest < Test::Unit::TestCase
     assert_kind_of Hash, json
     #TODO add verification
   end
+
+  def test_single_record
+    assert_raise WorldCat::WorldCatError do
+      @client.single_record :oclc => "0000"
+    end
+
+    record = @client.single_record :isbn => "0596000278"
+    assert_kind_of MARC::Record, record
+    assert_equal "Programming Perl /", record["245"]["a"]
+  end
 end

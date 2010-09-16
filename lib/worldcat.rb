@@ -172,6 +172,29 @@ class WorldCat
     response
   end
 
+  # Single Bibliographic Record.
+  #
+  # aliases:
+  # * record identifier should be given as type => id. e.g.:
+  #   :isbn => "014330223X"
+  #
+  # this method returns a MARC::Record.
+  def single_record(options)
+    url_comp = "content/"
+
+    # Check aliases
+    options.keys.each do |k|
+      case k
+      when :oclc then url_comp << options[k].to_s
+      when :isbn then url_comp << "isbn/" << options[k].to_s
+      when :issn then url_comp << "issn/" << options[k].to_s
+      end
+    end
+
+    fetch(url_comp, options, true)
+    marc_to_array.first
+  end
+
   private
 
   # Helper method to convert a MARC::XMLReader in an array of records.
@@ -208,11 +231,11 @@ class WorldCat
     # Check for diagnostics
     if diagnostic
       xml = REXML::Document.new @raw
-      d = xml.elements['diagnostics']
-      d = xml.root.elements['diagnostics'] if d.nil?
+      d = xml.elements['diagnostics'] || xml.root.elements['diagnostics']
       unless d.nil?
         d = d.elements.first
-        details = d.elements["details"].text
+        details = d.elements["details"]
+        details = details.text unless details.nil?
         message = d.elements["message"].text
 
         raise WorldCatError.new(details), message
