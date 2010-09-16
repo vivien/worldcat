@@ -99,4 +99,23 @@ class WorldCatTest < Test::Unit::TestCase
     assert_kind_of MARC::Record, record
     assert_equal "Programming Perl /", record["245"]["a"]
   end
+
+  def test_library_catalog_url
+    assert_raise WorldCat::WorldCatError do
+      @client.library_catalog_url :oclcsymbol => "XXXX"
+    end
+
+    assert_raise WorldCat::WorldCatError do
+      @client.library_catalog_url :isbn => "0000", :oclcsymbol => "OSU"
+    end
+
+    xml = @client.library_catalog_url :isbn => "0026071800", :oclcsymbol => "OSU"
+    assert_kind_of REXML::Document, xml
+    assert_equal "Ohio State University Libraries", xml.root.elements.first.elements["physicalLocation"].text
+
+    xml = @client.library_catalog_url :oclc => "15550774", :oclcsymbol => ["OSU", "STF"]
+    assert_kind_of REXML::Document, xml
+    assert_equal "Ohio State University Libraries", xml.root.elements.first.elements["physicalLocation"].text
+    assert_equal "Stanford University Library", xml.root.elements[2].elements["physicalLocation"].text
+  end
 end

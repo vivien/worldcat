@@ -149,10 +149,10 @@ class WorldCat
         options[k] = 2 if libtype =~ "public"
         options[k] = 3 if libtype =~ "government"
         options[k] = 4 if libtype =~ "other"
-      when :oclc then url_comp << options[k].to_s
-      when :isbn then url_comp << "isbn/" << options[k].to_s
-      when :issn then url_comp << "issn/" << options[k].to_s
-      when :sn then url_comp << "sn/" << options[k].to_s
+      when :oclc then url_comp << options.delete(k).to_s
+      when :isbn then url_comp << "isbn/" << options.delete(k).to_s
+      when :issn then url_comp << "issn/" << options.delete(k).to_s
+      when :sn then url_comp << "sn/" << options.delete(k).to_s
       end
     end
 
@@ -185,15 +185,31 @@ class WorldCat
     # Check aliases
     options.keys.each do |k|
       case k
-      when :oclc then url_comp << options[k].to_s
-      when :isbn then url_comp << "isbn/" << options[k].to_s
-      when :issn then url_comp << "issn/" << options[k].to_s
+      when :oclc then url_comp << options.delete(k).to_s
+      when :isbn then url_comp << "isbn/" << options.delete(k).to_s
+      when :issn then url_comp << "issn/" << options.delete(k).to_s
       end
     end
 
     fetch(url_comp, options, true)
     marc_to_array.first
   end
+
+  def library_catalog_url(options)
+    url_comp = "content/libraries/"
+
+    # Check aliases
+    options.keys.each do |k|
+      case k
+      when :oclc then url_comp << options.delete(k).to_s
+      when :isbn then url_comp << "isbn/" << options.delete(k).to_s
+      end
+    end
+
+    #TODO get diagnostic for "no holdings found" instead of raising it.
+    fetch(url_comp, options, true)
+    REXML::Document.new(@raw)
+    end
 
   private
 
