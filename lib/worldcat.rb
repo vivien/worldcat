@@ -90,18 +90,13 @@ class WorldCat
     options.keys.each do |k|
       case k.to_s
       when "q" then options[:query] = options.delete(k)
-        #TODO aliases for keywords, title, author, subject to simplify the query
-        # => not sure: how to write operator?
       when /(count|max)/ then options[:maximum_records] = options.delete(k)
       when "citation_format" then options[:cformat] = options.delete(k)
-        #TODO alias for frbrGrouping => true|false
       when "format"
         format = options.delete(k).to_s
-        options[:record_schema] = case format
-                                  when /marc/ then "info:srw/schema/1/marcxml"
-                                  when /dublin/ then "info:srw/schema/1/dc"
-                                  else format
-                                  end
+        format = "info:srw/schema/1/marcxml" if format =~ /marc/
+        format = "info:srw/schema/1/dc" if format =~ /dublin/
+        options[:record_schema] = format
       end
     end
 
@@ -109,8 +104,13 @@ class WorldCat
     options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
 
     fetch("search/sru", options, true)
-    #TODO specific constructor for Dublin Core?
-    marc_to_array
+
+    format = options[:record_schema]
+    if format.nil? || format == "info:srw/schema/1/marcxml"
+      marc_to_array
+    else
+      REXML::Document.new @raw
+    end
   end
 
   private

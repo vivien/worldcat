@@ -68,6 +68,7 @@ class WorldCatTest < Test::Unit::TestCase
     assert_equal "Antietam, Battle of, Md., 1862.", records.first["650"]["a"]
 
     # Dublin Core
-    #TODO
+    dublin = @client.sru_search :q => cql, :format => "dublincore"
+    assert_kind_of REXML::Document, dublin
   end
 end
