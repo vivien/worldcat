@@ -195,6 +195,13 @@ class WorldCat
     marc_to_array.first
   end
 
+  # Libray Catalog URL for a Record.
+  #
+  # aliases:
+  # * record identifier should be given as type => id. e.g.:
+  #   :isbn => "014330223X"
+  #
+  # this method returns a MARC::Record.
   def library_catalog_url(options)
     url_comp = "content/libraries/"
 
@@ -227,6 +234,9 @@ class WorldCat
   # Method to fetch the raw response from WorldCat webservices.
   # With diagnostic set to true, it will check for error from WorldCat.
   def fetch(url_comp, options, diagnostic = false)
+    #TODO improve diagnostic (separated method for xml/json)
+    #TODO add a raw url attributes
+    #TODO update README
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
 
