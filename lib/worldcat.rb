@@ -111,7 +111,8 @@ class WorldCat
 
     # Parse the CQL query. Raises a CqlException if it is not valid.
     options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
-    fetch("search/sru", options, true)
+    fetch("search/sru", options)
+    xml_diagnostic
 
     format = options[:record_schema]
     if format.nil? || format == "info:srw/schema/1/marcxml"
@@ -160,15 +161,12 @@ class WorldCat
     end
 
     if options.has_key? :format
-      fetch(url_comp, options, false)
+      fetch(url_comp, options)
+      json_diagnostic
       response = JSON.parse(@raw_response)
-      if response.has_key? "diagnostic"
-        details = response["diagnostic"].first["details"]
-        message = response["diagnostic"].first["message"]
-        raise WorldCatError.new(details), message
-      end
     else
-      fetch(url_comp, options, true)
+      fetch(url_comp, options)
+      xml_diagnostic
       response = REXML::Document.new(@raw_response)
     end
 
@@ -194,7 +192,8 @@ class WorldCat
       end
     end
 
-    fetch(url_comp, options, true)
+    fetch(url_comp, options)
+    xml_diagnostic
     marc_to_array.first
   end
 
@@ -217,7 +216,8 @@ class WorldCat
     end
 
     #TODO get diagnostic for "no holdings found" instead of raising it.
-    fetch(url_comp, options, true)
+    fetch(url_comp, options)
+    xml_diagnostic
     REXML::Document.new(@raw_response)
     end
 
@@ -235,9 +235,7 @@ class WorldCat
   end
 
   # Method to fetch the raw response from WorldCat webservices.
-  # With diagnostic set to true, it will check for error from WorldCat.
-  def fetch(url_comp, options, diagnostic = false)
-    #TODO improve diagnostic (separated method for xml/json)
+  def fetch(url_comp, options)
     #TODO update README
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
@@ -256,19 +254,29 @@ class WorldCat
       else raise e
       end
     end
+  end
 
-    # Check for diagnostics
-    if diagnostic
-      xml = REXML::Document.new @raw_response
-      d = xml.elements['diagnostics'] || xml.root.elements['diagnostics']
-      unless d.nil?
-        d = d.elements.first
-        details = d.elements["details"]
-        details = details.text unless details.nil?
-        message = d.elements["message"].text
+  # Check for diagnostics of XML responses from WorldCat.
+  def xml_diagnostic
+    xml = REXML::Document.new @raw_response
+    d = xml.elements['diagnostics'] || xml.root.elements['diagnostics']
+    unless d.nil?
+      d = d.elements.first
+      details = d.elements["details"]
+      details = details.text unless details.nil?
+      message = d.elements["message"].text
 
-        raise WorldCatError.new(details), message
-      end
+      raise WorldCatError.new(details), message
+    end
+  end
+
+  # Check for diagnostics of JSON responses from WorldCat.
+  def json_diagnostic
+    json = JSON.parse(@raw_response)
+    if json.has_key? "diagnostic"
+      details = json["diagnostic"].first["details"]
+      message = json["diagnostic"].first["message"]
+      raise WorldCatError.new(details), message
     end
   end
 
