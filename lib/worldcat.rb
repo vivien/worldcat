@@ -36,13 +36,16 @@ class WorldCat
   attr_writer :api_key
 
   # The raw response from WorldCat.
-  attr_reader :raw
+  attr_reader :raw_response
+
+  # The raw url used to fetch the response.
+  attr_reader :raw_url
 
   # The constructor.
   # The API key can be given here or later.
   def initialize(api_key = nil)
     @api_key = api_key
-    @raw = nil
+    @raw_response = nil
   end
 
   # OpenSearch method.
@@ -68,7 +71,7 @@ class WorldCat
 
     fetch("search/opensearch", options)
     #TODO diagnostic
-    SimpleRSS.parse @raw
+    SimpleRSS.parse @raw_response
     #TODO rescue SimpleRSS Error? (i.e. response too small)
   end
 
@@ -114,7 +117,7 @@ class WorldCat
     if format.nil? || format == "info:srw/schema/1/marcxml"
       marc_to_array
     else
-      REXML::Document.new @raw
+      REXML::Document.new @raw_response
     end
   end
 
@@ -158,7 +161,7 @@ class WorldCat
 
     if options.has_key? :format
       fetch(url_comp, options, false)
-      response = JSON.parse(@raw)
+      response = JSON.parse(@raw_response)
       if response.has_key? "diagnostic"
         details = response["diagnostic"].first["details"]
         message = response["diagnostic"].first["message"]
@@ -166,7 +169,7 @@ class WorldCat
       end
     else
       fetch(url_comp, options, true)
-      response = REXML::Document.new(@raw)
+      response = REXML::Document.new(@raw_response)
     end
 
     response
@@ -215,7 +218,7 @@ class WorldCat
 
     #TODO get diagnostic for "no holdings found" instead of raising it.
     fetch(url_comp, options, true)
-    REXML::Document.new(@raw)
+    REXML::Document.new(@raw_response)
     end
 
   private
@@ -224,7 +227,7 @@ class WorldCat
   # That's easier to use and better because of the bug
   # that makes the REXML reader empty after the first #each call.
   def marc_to_array
-    reader = MARC::XMLReader.new(StringIO.new @raw)
+    reader = MARC::XMLReader.new(StringIO.new @raw_response)
     records = Array.new
     reader.each { |record| records << record }
 
@@ -235,17 +238,17 @@ class WorldCat
   # With diagnostic set to true, it will check for error from WorldCat.
   def fetch(url_comp, options, diagnostic = false)
     #TODO improve diagnostic (separated method for xml/json)
-    #TODO add a raw url attributes
     #TODO update README
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
 
     url = "http://www.worldcat.org/webservices/catalog/" << url_comp << "?"
     url << options.map { |k, v| "#{camelize(k)}=#{parse_value(v)}" }.join("&")
+    @raw_url = URI.escape(url)
 
     begin
-      open URI.escape(url) do |raw|
-        @raw = raw.read
+      open @raw_url do |raw|
+        @raw_response = raw.read
       end
     rescue OpenURI::HTTPError => e
       if e.message =~ /status=UNAUTHENTICATED/
@@ -256,7 +259,7 @@ class WorldCat
 
     # Check for diagnostics
     if diagnostic
-      xml = REXML::Document.new @raw
+      xml = REXML::Document.new @raw_response
       d = xml.elements['diagnostics'] || xml.root.elements['diagnostics']
       unless d.nil?
         d = d.elements.first
