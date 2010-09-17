@@ -39,8 +39,6 @@ For more information, please have a look at the documentation or the test cases.
 
   gem install worldcat
 
-Available soon.
-
 == Why?
 
 The 'wcapi' gem does not satisfy several points, so another version is justified for many reasons:
@@ -57,6 +55,10 @@ The 'wcapi' gem does not satisfy several points, so another version is justified
 * Receive a MARC::Record for a single OCLC record.
 * Receive a REXML::Document for geographically-sorted library holdings information.
 * Receive a HTML formatted String for standard bibliographic citation formats (APA, Chicago, Harvard, MLA, and Turabian).
+
+== To do
+
+* Use SRU gem to get response from sru_search.
 
 == Contribution
 
