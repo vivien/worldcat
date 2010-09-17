@@ -256,7 +256,7 @@ class WorldCat
   # That's easier to use and better because of the bug
   # that makes the REXML reader empty after the first #each call.
   def marc_to_array
-    reader = MARC::XMLReader.new(StringIO.new @raw_response)
+    reader = MARC::XMLReader.new(StringIO.new(@raw_response))
     records = Array.new
     reader.each { |record| records << record }
 
