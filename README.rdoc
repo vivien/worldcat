@@ -53,21 +53,20 @@ The 'wcapi' gem does not satisfy several points, so another version is justified
 
 * Send searches in OpenSearch or SRU CQL syntax.
 * Receive OpenSearch responses in RSS or Atom format (both are a SimpleRSS object).
-* Receive SRU responses in MARC XML or Dublin Core.
-
-== To do
-
-* Use the SRU gem for sru_search method
-* Receive MARC XML content for a single OCLC record.
-* Receive geographically-sorted library holdings information (each including the institution's name, location and a catalog link) within requests for single records.
-* Receive records in standard bibliographic citation formats (APA, Chicago, Harvard, MLA, and Turabian).
+* Receive SRU responses in an array of MARC::Record or Dublin Core (REXML::Document).
+* Receive a MARC::Record for a single OCLC record.
+* Receive a REXML::Document for geographically-sorted library holdings information.
+* Receive a HTML formatted String for standard bibliographic citation formats (APA, Chicago, Harvard, MLA, and Turabian).
 
 == Contribution
 
-Feel free to fork and send me a pull request for changes, fixes or suggestions.
+Feel free to fork and send me a pull request for changes, fixes or simply a message for any suggestion.
 
 == See
 
 * {WorldCat webservices}[http://www.worldcat.org/affiliate/tools?atype=wcapi]
 * {Ruby MARC documentation}[http://marc.rubyforge.org/]
 * {Ruby Simple RSS documentation}[http://simple-rss.rubyforge.org/]
+
+Vivien Didelot <vivien.didelot@gmail.com>
+http://github.com/v0n/worldcat

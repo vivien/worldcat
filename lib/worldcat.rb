@@ -103,8 +103,8 @@ class WorldCat
       when :citation_format then options[:cformat] = options.delete(k)
       when :format
         format = options.delete(k).to_s
-        format = "info:srw/schema/1/marcxml" if format =~ /marc/
-        format = "info:srw/schema/1/dc" if format =~ /dublin/
+        if format =~ /marc/ then format = "info:srw/schema/1/marcxml" end
+        if format =~ /dublin/ then format = "info:srw/schema/1/dc" end
         options[:record_schema] = format
       end
     end
@@ -149,10 +149,10 @@ class WorldCat
       when :format then options.delete(k) if options[k].to_s == "xml"
       when :libtype
         libtype = options[k].to_s
-        options[k] = 1 if libtype =~ "academic"
-        options[k] = 2 if libtype =~ "public"
-        options[k] = 3 if libtype =~ "government"
-        options[k] = 4 if libtype =~ "other"
+        options[k] = 1 if libtype == "academic"
+        options[k] = 2 if libtype == "public"
+        options[k] = 3 if libtype == "government"
+        options[k] = 4 if libtype == "other"
       when :oclc then url_comp << options.delete(k).to_s
       when :isbn then url_comp << "isbn/" << options.delete(k).to_s
       when :issn then url_comp << "issn/" << options.delete(k).to_s
@@ -219,7 +219,36 @@ class WorldCat
     fetch(url_comp, options)
     xml_diagnostic
     REXML::Document.new(@raw_response)
+  end
+
+  # Formatted Citations.
+  #
+  # aliases:
+  # * :citation_format is an alias for :cformat
+  # * record identifier should be given as:
+  #   :oclc => [oclc_number]
+  #
+  # this method returns a HTML formatted String.
+  def formatted_citations(options)
+    url_comp = "content/citations/"
+
+    # Check aliases
+    options.keys.each do |k|
+      case k
+      when :citation_format then options[:cformat] = options.delete(k)
+      when :oclc then url_comp << options.delete(k).to_s
+      end
     end
+
+    fetch(url_comp, options)
+    if options.has_key? :cformat
+      xml_diagnostic
+    else
+      str_diagnostic
+    end
+
+    @raw_response
+  end
 
   private
 
@@ -253,6 +282,13 @@ class WorldCat
         raise WorldCatError.new(e.message), "Authentication failure"
       else raise e
       end
+    end
+  end
+
+  def str_diagnostic
+    # May be something like: "info:srw/diagnostic/1/65Record does not exist"
+    if @raw_response =~ /(info:srw\/diagnostic\/\d+\/\d+)(.*)/
+      raise WorldCatError.new, $2
     end
   end
 

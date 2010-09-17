@@ -118,4 +118,22 @@ class WorldCatTest < Test::Unit::TestCase
     assert_equal "Ohio State University Libraries", xml.root.elements.first.elements["physicalLocation"].text
     assert_equal "Stanford University Library", xml.root.elements[2].elements["physicalLocation"].text
   end
+
+  def test_formatted_citations
+    assert_raise WorldCat::WorldCatError do
+      @client.formatted_citations :oclc => "0000"
+    end
+
+    assert_raise WorldCat::WorldCatError do
+      @client.formatted_citations :oclc => "15550774", :citation_format => :xxxx
+    end
+
+    citation = @client.formatted_citations :oclc => "15550774"
+    assert_kind_of String, citation
+    assert_equal '<p class="citation_style_MLA">McPherson, James M. <i>Battle Cry of Freedom: The Civil War Era</i>. The Oxford history of the United States, v. 6. New York: Oxford University Press, 1988. </p>', citation
+
+    citation = @client.formatted_citations :oclc => "15550774", :cformat => "chicago"
+    assert_kind_of String, citation
+    assert_match /CHICAGO/, citation
+  end
 end
