@@ -47,7 +47,7 @@ class WorldCatTest < Test::Unit::TestCase
   end
 
   def test_sru_search
-    assert_raise CqlRuby::CqlException do
+    assert_raise WorldCat::WorldCatError do
       @client.sru_search :query => "Civil War"
     end
 

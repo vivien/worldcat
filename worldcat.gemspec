@@ -10,6 +10,5 @@ Gem::Specification.new do |spec|
   spec.files << 'CHANGELOG.rdoc'
   spec.add_dependency 'simple-rss', '>= 1.2.3'
   spec.add_dependency 'marc', '>= 0.3.3'
-  spec.add_dependency 'cql-ruby', '>= 0.8.2'
   spec.add_dependency 'json', '>= 1.4.6'
 end

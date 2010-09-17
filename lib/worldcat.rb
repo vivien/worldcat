@@ -8,7 +8,6 @@ require 'open-uri'       # used to fetch responses
 require 'simple-rss'     # used for Atom and RSS format
 require 'marc'           # used for MARC records
 require 'rexml/document' # used for many XML purposes
-require 'cql_ruby'       # used to parse SRU CQL query
 require 'json'           # used for JSON format
 
 # The WorldCat class methods use WorldCat webservices.
@@ -87,8 +86,6 @@ class WorldCat
   # * :start is an alias for :start_record
   # * :count and :max are aliases for :maximum_records
   #
-  # The CQL query will be parsed and can raise an exception if it is not valid.
-  #
   # this method returns an array of MARC::Record objects for marc format
   # (you can see the usage on http://marc.rubyforge.org),
   # or a REXML::Document for Dublin Core format.
@@ -110,8 +107,6 @@ class WorldCat
       end
     end
 
-    # Parse the CQL query. Raises a CqlException if it is not valid.
-    options[:query] = CqlRuby::CqlParser.new.parse(options[:query]).to_cql
     fetch("search/sru", options)
     xml_diagnostic
 
