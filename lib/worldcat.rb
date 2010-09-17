@@ -265,7 +265,6 @@ class WorldCat
 
   # Method to fetch the raw response from WorldCat webservices.
   def fetch(url_comp, options)
-    #TODO update README
     # Use the API key attribute or the one provided.
     options = {:wskey => @api_key}.merge options
 
