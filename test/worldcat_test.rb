@@ -27,8 +27,13 @@ class WorldCatTest < Test::Unit::TestCase
 
     assert_kind_of SimpleRSS, atom
     assert_equal 10, atom.entries.size
-    assert_equal "OCLC Worldcat Search: Civil War", atom.feed.title
     assert_equal "Hemingway, Ernest, 1899-1961.", atom.entries.first.author
+    # Custom tags
+    assert_equal "349093", atom.feed.opensearch_totalResults
+    assert_equal "10", atom.feed.opensearch_itemsPerPage
+    assert_equal "1", atom.feed.opensearch_startIndex
+    assert_equal "urn:ISBN:7777777777", atom.entries.first.dc_identifier
+    assert_equal "285606", atom.entries.first.oclcterms_recordIdentifier
 
     # A search for civil war, returning a result in the RSS format, starting at position 6, with a count of 5 records
     rss = @client.open_search :q => "Civil War", :format => "rss", :start => 6, :count => 5
@@ -37,6 +42,12 @@ class WorldCatTest < Test::Unit::TestCase
     assert_equal 5, rss.items.size
     assert_equal "OCLC Worldcat Search: Civil War", rss.channel.title
     assert_equal "Cashin, Joan E.", rss.items.last.author
+    # Custom tags
+    assert_equal "349093", rss.channel.opensearch_totalResults
+    assert_equal "5", rss.channel.opensearch_itemsPerPage
+    assert_equal "6", rss.channel.opensearch_startIndex
+    assert_equal "urn:ISBN:0674022947", rss.items.last.dc_identifier
+    assert_equal "64625034", rss.items.last.oclcterms_recordIdentifier
 
     # A search for civil war, returning a result in the Atom format, including an MLA-formatted citation for each record
     atom = @client.open_search :q => "Civil War", :format => "atom", :cformat => "mla"

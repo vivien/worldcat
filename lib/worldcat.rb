@@ -58,8 +58,6 @@ class WorldCat
   # This method returns a SimpleRSS object. You can see the usage on:
   # http://simple-rss.rubyforge.org/
   def open_search(options)
-    #TODO add other feed_tags
-
     # Check aliases
     options.keys.each do |k|
       case k
@@ -71,6 +69,14 @@ class WorldCat
 
     fetch("search/opensearch", options)
     #TODO diagnostic
+
+    # Add tags
+    SimpleRSS.feed_tags << :"opensearch:totalResults"
+    SimpleRSS.feed_tags << :"opensearch:startIndex"
+    SimpleRSS.feed_tags << :"opensearch:itemsPerPage"
+    SimpleRSS.item_tags << :"dc:identifier"
+    SimpleRSS.item_tags << :"oclcterms:recordIdentifier"
+
     SimpleRSS.parse @raw_response
     #TODO rescue SimpleRSS Error? (i.e. response too small)
   end
