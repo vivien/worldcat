@@ -27,7 +27,7 @@ Get MARC XML or Dublin Core from a SRU CQL query
 
 If you'd like to use another implementation, the raw response is available:
 
-  client.raw
+  client.raw_response
 
 A faster way?
 
