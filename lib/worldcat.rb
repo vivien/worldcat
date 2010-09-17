@@ -45,6 +45,7 @@ class WorldCat
   # The API key can be given here or later.
   def initialize(api_key = nil)
     @api_key = api_key
+    @raw_url = nil
     @raw_response = nil
   end
 
